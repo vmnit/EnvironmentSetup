@@ -48,3 +48,7 @@ function svenv {
 function gpu_pids {
   rocm-smi --showpids | awk '{print $1}'  | head -n -2 | tail -n+7 | xargs -L1 ps -u -p
 }
+
+function dockerInspect {
+  docker inspect $1 |less
+}
