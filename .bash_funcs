@@ -52,3 +52,30 @@ function gpu_pids {
 function dockerInspect {
   docker inspect $1 |less
 }
+
+# slurm: update a job's time limit (usage: slurmUpdateTime <jobid> <timelimit>)
+function slurmUpdateTime() {
+  if [ $# -ne 2 ]; then
+    echo "usage: slurmUpdateTime <jobid> <timelimit, e.g. 12:00:00>" >&2
+    return 1
+  fi
+  sudo scontrol update jobid="$1" TimeLimit="$2"
+}
+
+# slurm: show queue info for a job (usage: slurmQueue <jobid>)
+function slurmQueue() {
+  if [ $# -ne 1 ]; then
+    echo "usage: slurmQueue <jobid>" >&2
+    return 1
+  fi
+  squeue -j "$1" -o "%.10i %.10L %.10l"
+}
+
+# slurm: show accounting info for a job (usage: slurmAcct <jobid>)
+function slurmAcct() {
+  if [ $# -ne 1 ]; then
+    echo "usage: slurmAcct <jobid>" >&2
+    return 1
+  fi
+  sacct -j "$1" --format=JobID,Timelimit,Elapsed
+}

@@ -179,3 +179,8 @@ PROMPT_COMMAND='history -a'
 shopt -s expand_aliases  
 
 set_prompt
+
+[ -f "$HOME/.config/claude-code/env.sh" ] && . "$HOME/.config/claude-code/env.sh"
+
+# Trust AMD ICE corporate CA in Node (for Claude Code MCP, npm, etc.)
+export NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt

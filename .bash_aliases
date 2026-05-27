@@ -37,6 +37,7 @@ alias gco='git checkout'
 alias gcm='git commit -m'
 alias gpl='git pull -r '
 alias gph='git push'
+alias gbr='git branch'
 alias gbrl='git branch -l'
 alias gbrd='git branch -d'
 alias gd='git diff'
@@ -60,5 +61,7 @@ alias psr='ps -eaf | grep run_offline'
 alias psp='ps -eaf | grep python3'
 alias kp='kill -9 '
 alias pstree='ps -ejH | less'
+
+alias pdshRun='pdsh -w $SLURM_NODELIST '
 
 source ~/.bash_funcs
