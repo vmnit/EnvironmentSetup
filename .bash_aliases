@@ -34,7 +34,7 @@ alias tmn='tmux new-session -s '
 # git specific
 alias gst='git status'
 alias gco='git checkout'
-alias gcm='git commit -m'
+alias gcm='git commit -s -m'
 alias gpl='git pull -r '
 alias gph='git push'
 alias gbr='git branch'
@@ -54,7 +54,7 @@ alias grest='git restore --staged'
 alias gsw='git switch '
 alias gswc='git switch -c '
 
-alias genv='env | grep ' 
+alias genv='env | grep '
 
 # harness specific alias
 alias psr='ps -eaf | grep run_offline'
