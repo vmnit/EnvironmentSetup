@@ -15,6 +15,10 @@
 # TMUX
 .tmux.conf
 
+.config/nvim/init.vim
+
 # claude
 .claude
-.config/nvim/init.vim
+
+# cursor
+.cursor
