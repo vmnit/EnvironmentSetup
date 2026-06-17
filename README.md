@@ -51,7 +51,13 @@ edit a tracked file for per-machine tweaks:
 ```sh
 bash lib/update.sh             # copy tracked files from $HOME back into home/
 bash lib/diff.sh               # show what differs between home/ and $HOME
+bash lib/status.sh [PRIVATE]   # diff this repo AND an overlay (e.g. private repo)
 ```
+
+`status.sh` diffs the public `home/` plus any overlay tree you pass (a repo root
+or its `home/` dir), or `$DOTFILES_PRIVATE` if set — handy for checking both
+layers before an install so machine-specific edits aren't lost. Files that exist
+only in `$HOME` (e.g. `*.local.host`) are never listed, so they can't be clobbered.
 
 ## Provisioning a full machine (with private overlay)
 
