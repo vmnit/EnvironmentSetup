@@ -20,3 +20,16 @@ rad.json
 *.flf
 #Test results file
 TestResults.xml
+
+### dotfiles ###
+# Secrets / AMD-internal config must never enter this public repo.
+.config/claude-code/
+home/.config/claude-code/
+# Machine/private overlays live in the private repo or in $HOME only.
+*.local
+*.local.host
+# Local Claude Code settings and install backups.
+.claude/settings.local.json
+.dotfiles-backup/
+# NFS lock artifacts.
+.nfs*

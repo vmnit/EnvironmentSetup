@@ -65,3 +65,7 @@ alias pstree='ps -ejH | less'
 alias pdshRun='pdsh -w $SLURM_NODELIST '
 
 source ~/.bash_funcs
+
+# Machine/private overlays (see dotfiles README).
+[ -f ~/.bash_aliases.local ]      && . ~/.bash_aliases.local
+[ -f ~/.bash_aliases.local.host ] && . ~/.bash_aliases.local.host

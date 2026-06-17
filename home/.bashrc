@@ -180,7 +180,8 @@ shopt -s expand_aliases
 
 set_prompt
 
-[ -f "$HOME/.config/claude-code/env.sh" ] && . "$HOME/.config/claude-code/env.sh"
-
-# Trust AMD ICE corporate CA in Node (for Claude Code MCP, npm, etc.)
-export NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+# Machine/private overlays (see dotfiles README).
+# .local      -> managed by the private dotfiles repo (do not hand-edit)
+# .local.host -> per-machine, never tracked in any repo
+[ -f ~/.bashrc.local ]      && . ~/.bashrc.local
+[ -f ~/.bashrc.local.host ] && . ~/.bashrc.local.host

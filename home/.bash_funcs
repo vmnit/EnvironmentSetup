@@ -45,10 +45,6 @@ function svenv {
   source $1/bin/activate
 }
 
-function gpu_pids {
-  rocm-smi --showpids | awk '{print $1}'  | head -n -2 | tail -n+7 | xargs -L1 ps -u -p
-}
-
 function dockerInspect {
   docker inspect $1 |less
 }
@@ -79,3 +75,7 @@ function slurmAcct() {
   fi
   sacct -j "$1" --format=JobID,Timelimit,Elapsed
 }
+
+# Machine/private overlays (see dotfiles README).
+[ -f ~/.bash_funcs.local ]      && . ~/.bash_funcs.local
+[ -f ~/.bash_funcs.local.host ] && . ~/.bash_funcs.local.host
