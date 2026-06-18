@@ -7,7 +7,9 @@ description: >-
   handle Copilot/Bugbot suggestions on a GitHub PR. Classifies each comment as
   worth-fixing vs. nitpick, applies fixes plus proactive sweeps for similar
   gaps elsewhere in the diff, and replies to non-actionable comments with a
-  humble, reasoned justification.
+  humble, reasoned justification. After code changes, automatically chains into
+  the self-review-before-pr skill when that skill is installed on disk, so push
+  hooks and quality gates stay satisfied without the user attaching both skills.
 ---
 
 # Address PR Review Comments
@@ -24,12 +26,15 @@ Copy this checklist into your working notes and track progress:
 - [ ] 3. For Act items: implement fix + proactive sweep
 - [ ] 4. For Decline items: draft humble reply with reasoning
 - [ ] 5. For Discuss items: ask one clarifying question
-- [ ] 6. Post replies and resolve threads
-- [ ] 7. Re-request Copilot review if Copilot is a reviewer
-- [ ] 8. Capture patterns to avoid in future PRs
+- [ ] 6. Self-review gate (if installed): see "Self-review handoff before push"
+- [ ] 7. Post replies and resolve threads
+- [ ] 8. Re-request Copilot review if Copilot is a reviewer
+- [ ] 9. Capture patterns to avoid in future PRs
 ```
 
-Do not skip step 3's proactive sweep or step 8's pattern capture - they are the difference between this skill and naive comment-by-comment fixes.
+Do not skip step 3's proactive sweep or step 9's pattern capture - they are the difference between this skill and naive comment-by-comment fixes.
+
+**Ordering:** Run the self-review handoff **after** all Act fixes are committed locally and **before** `git push` (in Step 7). If self-review finds new issues and produces commits, finish that loop first, then push once, then post PR replies (so thread links match the final SHA). If you already pushed before self-review caught issues, push again after the follow-up commit, then reply on the PR.
 
 ## Step 1: Fetch comments
 
@@ -181,14 +186,45 @@ Ask exactly one clarifying question per thread. Examples:
 
 Do not change code on a Discuss item until the reviewer responds.
 
-## Step 6: Post replies and resolve
+## Step 6: Self-review handoff before push (chains `self-review-before-pr` when available)
+
+This step is **not** a second skill the user must attach. **Always** probe for the
+personal self-review install; if it exists, **read** `~/.cursor/skills/self-review-before-pr/SKILL.md` and **execute** its full review loop for the current repo before any push that publishes review fixes.
+
+**Detection (run from any directory; prints `installed` or `missing`):**
+
+```bash
+if [ -f "$HOME/.cursor/skills/self-review-before-pr/scripts/self_review.py" ] \
+   && [ -f "$HOME/.cursor/skills/self-review-before-pr/SKILL.md" ]; then
+  echo installed
+else
+  echo missing
+fi
+```
+
+- **If the output is `installed`:** Treat this as mandatory for this workflow:
+  follow the self-review skill end-to-end (including `python3 …/self_review.py scan`,
+  manual KB pass, fixes, re-scan, and `mark-reviewed --summary "…"` on the commit
+  you will push). Report that same summary in chat so the loop is not silent.
+  That satisfies the same gate as a dedicated "self-review before PR" run and, when
+  the `before-push-self-review.sh` hook is enabled, clears it in one pass instead of
+  bouncing off it.
+- **If the output is `missing`:** Do **not** fail the overall task. Tell the user in one
+  sentence that the self-review skill is not installed at the expected path, so
+  only this skill's review discipline ran; recommend installing or attaching
+  `self-review-before-pr` if they use the push hook.
+
+Do not assume the self-review skill is in the session rules list; **filesystem
+presence** is the source of truth.
+
+## Step 7: Post replies and resolve
 
 - Post each reply on the specific thread (use `gh api ... /pulls/comments/{id}/replies` for inline, or `gh pr comment` for top-level).
 - Resolve threads where you applied the fix or where the reviewer's last word was acceptance.
 - Do **not** resolve a thread where you declined - let the reviewer resolve it after they've seen your reasoning.
 - Push the fix commit with a message that references the review (e.g. `address review: null-check feed entries (#1234)`).
 
-## Step 7: Re-request Copilot review
+## Step 8: Re-request Copilot review
 
 If GitHub Copilot is one of the PR's reviewers, re-request its review **after** you have pushed the fix commit (so it re-reviews the updated diff). Copilot does not automatically re-review when you push new commits - you must explicitly ask again.
 
@@ -225,7 +261,7 @@ gh api graphql -f query='
 
 If the Copilot bot id is not in `suggestedReviewers` (it usually appears once it has reviewed before), fall back to the UI re-request or `gh pr edit <pr> --add-reviewer copilot-pull-request-reviewer` and confirm it took. Mention in your summary that you re-requested Copilot so the user expects a fresh pass.
 
-## Step 8: Capture patterns (avoid the same comment next time)
+## Step 9: Capture patterns (avoid the same comment next time)
 
 After the PR is settled, write a one-liner for each **valid** comment into the project's running list of review patterns. Check, in order:
 
@@ -252,4 +288,4 @@ The next time you open a PR in this repo, scan that list before pushing. The goa
 
 ## Summary
 
-Fetch → classify → fix-and-sweep → reply humbly → resolve → record the pattern. Treat every comment as a free lesson; treat every reply as something the reviewer will reread tomorrow.
+Fetch → classify → fix-and-sweep → **self-review if installed** → reply humbly → resolve → record the pattern. Treat every comment as a free lesson; treat every reply as something the reviewer will reread tomorrow.
