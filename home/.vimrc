@@ -31,6 +31,8 @@ set ttyfast                 " Speed up scrolling in Vim
 set splitright
 set splitbelow
 
+let g:netrw_liststyle=3
+
 if !has('nvim')
   set ttymouse=xterm2
   " Tell vim to remember certain things when we exit
