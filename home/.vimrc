@@ -108,3 +108,9 @@ nnoremap <Leader>dp :call DebugPyPrint()<CR>
 " all unmappings
 silent! unmap t
 silent! unmap <C-E>
+
+" Machine/private overlays (see dotfiles README).
+" .local      -> managed by the private dotfiles repo (do not hand-edit)
+" .local.host -> per-machine, never tracked in any repo
+if filereadable(expand('~/.vimrc.local'))      | source ~/.vimrc.local      | endif
+if filereadable(expand('~/.vimrc.local.host')) | source ~/.vimrc.local.host | endif

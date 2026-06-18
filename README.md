@@ -40,6 +40,7 @@ edit a tracked file for per-machine tweaks:
 | `.bashrc` | `~/.bashrc.local`, `~/.bashrc.local.host` |
 | `.bash_aliases` | `~/.bash_aliases.local`, `~/.bash_aliases.local.host` |
 | `.bash_funcs` | `~/.bash_funcs.local`, `~/.bash_funcs.local.host` |
+| `.vimrc` | `~/.vimrc.local`, `~/.vimrc.local.host` |
 | `.ssh/config` | `Include ~/.ssh/config.local`, `~/.ssh/config.local.host` |
 
 - `*.local` — managed by the **private** dotfiles repo (do not hand-edit).
