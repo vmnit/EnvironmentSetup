@@ -13,6 +13,18 @@ home/      mirrors $HOME (only generic content)
 lib/       install / update / diff scripts
 ```
 
+### Claude Code & Cursor config
+
+Generic AI/editor config ships here (secret-bearing or AMD-internal config lives
+in the private overlay instead):
+
+- `home/.claude/agents/` — Claude Code subagents (rubric planner/evaluator/implementer).
+- `home/.cursor/skills/` — generic Cursor skills: `review-pr`, `rebase-pr`,
+  `address-pr-review-comments`, `batch-address-pr-reviews`.
+
+Cursor MCP servers (Atlassian/GitHub) carry live tokens and are provided per
+machine by the private overlay; nothing secret is tracked here.
+
 ## Install
 
 ```sh
