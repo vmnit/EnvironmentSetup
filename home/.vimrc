@@ -70,7 +70,10 @@ if &diff
   highlight DiffText   cterm=none ctermfg=Black ctermbg=DarkRed gui=none guifg=bg guibg=Red
 endif
 
-autocmd BufNewFile,BufRead *.cxx setlocal filetype=cpp
+augroup cxx_filetype
+  autocmd!
+  autocmd BufNewFile,BufRead *.cxx,*.cc,*.hxx,*.hh setlocal filetype=cpp
+augroup END
 
 "Remove trailing whitespaces on save
 autocmd BufWritePre *.py :%s/\s\+$//e

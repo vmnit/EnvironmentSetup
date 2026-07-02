@@ -27,6 +27,8 @@ Plug 'https://github.com/terryma/vim-multiple-cursors' " CTRL + N for multiple c
 "Plug 'codota/tabnine-nvim', { 'do': './dl_binaries.sh' }
 call plug#end()
 
+colorscheme gruvbox
+
 " lua << EOF
 " require('tabnine').setup({
 "   disable_auto_comment=true,
