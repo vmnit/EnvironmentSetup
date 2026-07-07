@@ -20,7 +20,8 @@ in the private overlay instead):
 
 - `home/.claude/agents/` — Claude Code subagents (rubric planner/evaluator/implementer).
 - `home/.cursor/skills/` — generic Cursor skills: `review-pr`, `rebase-pr`,
-  `address-pr-review-comments`, `batch-address-pr-reviews`.
+  `address-pr-review-comments`, `batch-address-pr-reviews`,
+  `loop-address-pr-comments`.
 
 Cursor MCP servers (Atlassian/GitHub) carry live tokens and are provided per
 machine by the private overlay; nothing secret is tracked here.
