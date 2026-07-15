@@ -93,6 +93,90 @@ function slurmAcct() {
   sacct -j "$1" --format=JobID,Timelimit,Elapsed
 }
 
+# slurm: convert a slurm duration (D-HH:MM:SS / HH:MM:SS / MM:SS) to seconds
+function _slurmDurToSec() {
+  local t="$1" days=0 h=0 m=0 s=0
+  case "$t" in
+    ""|INVALID|UNLIMITED|NOT_SET) echo -1; return ;;
+  esac
+  if [[ "$t" == *-* ]]; then days="${t%%-*}"; t="${t#*-}"; fi
+  local IFS=:; set -- $t
+  case $# in
+    3) h=$1; m=$2; s=$3 ;;
+    2) m=$1; s=$2 ;;
+    1) m=$1 ;;
+    *) echo -1; return ;;
+  esac
+  echo $(( 10#$days*86400 + 10#$h*3600 + 10#$m*60 + 10#$s ))
+}
+
+# slurm: convert seconds to slurm duration (D-HH:MM:SS or HH:MM:SS)
+function _slurmSecToDur() {
+  local total=$1 d h m s
+  d=$(( total/86400 )); total=$(( total%86400 ))
+  h=$(( total/3600 )); total=$(( total%3600 ))
+  m=$(( total/60 )); s=$(( total%60 ))
+  if [ "$d" -gt 0 ]; then
+    printf "%d-%02d:%02d:%02d" "$d" "$h" "$m" "$s"
+  else
+    printf "%02d:%02d:%02d" "$h" "$m" "$s"
+  fi
+}
+
+# slurm: extend a running job's time limit by N hours (default 2).
+# usage: slurmAddTime [hours] [jobid]
+#   - if no jobid and you have exactly one job, it is picked automatically
+#   - if you have several jobs, you are asked which one
+function slurmAddTime() {
+  local hours="${1:-2}" jobid="$2"
+
+  if ! [[ "$hours" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+    echo "error: hours must be a number (got '$hours')" >&2
+    echo "usage: slurmAddTime [hours] [jobid]" >&2
+    return 1
+  fi
+
+  if [ -z "$jobid" ]; then
+    local jobs
+    jobs=$(squeue -u "$USER" -h -o "%i")
+    if [ -z "$jobs" ]; then
+      echo "no jobs found for $USER" >&2
+      return 1
+    fi
+    if [ "$(echo "$jobs" | wc -l)" -eq 1 ]; then
+      jobid="$jobs"
+    else
+      echo "multiple jobs found:" >&2
+      squeue -u "$USER" -o "%.10i %.9P %.12j %.2t %.11M %.11L %.11l %R" >&2
+      read -rp "enter JOBID to extend: " jobid
+    fi
+  fi
+
+  local limit left
+  limit=$(squeue -j "$jobid" -h -o "%l" 2>/dev/null | tr -d ' ')
+  left=$(squeue -j "$jobid" -h -o "%L" 2>/dev/null | tr -d ' ')
+  if [ -z "$limit" ]; then
+    echo "could not read time limit for job $jobid" >&2
+    return 1
+  fi
+
+  local limitSec addSec newSec newLimit
+  limitSec=$(_slurmDurToSec "$limit")
+  if [ "$limitSec" -lt 0 ]; then
+    echo "cannot extend job $jobid: time limit is '$limit'" >&2
+    return 1
+  fi
+  # support fractional hours (e.g. 1.5) via awk, floored to whole seconds
+  addSec=$(awk "BEGIN{printf \"%d\", $hours*3600}")
+  newSec=$(( limitSec + addSec ))
+  newLimit=$(_slurmSecToDur "$newSec")
+
+  echo "job $jobid: adding ${hours}h  (time_left before: ${left})"
+  slurmUpdateTime "$jobid" "$newLimit" || return 1
+  left=$(squeue -j "$jobid" -h -o "%L" 2>/dev/null | tr -d ' ')
+  echo "job $jobid: new time_limit ${newLimit}  (time_left after:  ${left})"
+}
+
 # Machine/private overlays (see dotfiles README). Both are managed by the private
 # dotfiles repo (do not hand-edit).
 # .private      -> applies on every host
