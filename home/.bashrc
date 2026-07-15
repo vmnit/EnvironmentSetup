@@ -180,8 +180,9 @@ shopt -s expand_aliases
 
 set_prompt
 
-# Machine/private overlays (see dotfiles README).
-# .local      -> managed by the private dotfiles repo (do not hand-edit)
-# .local.host -> per-machine, never tracked in any repo
-[ -f ~/.bashrc.local ]      && . ~/.bashrc.local
-[ -f ~/.bashrc.local.host ] && . ~/.bashrc.local.host
+# Machine/private overlays (see dotfiles README). Both are managed by the private
+# dotfiles repo (do not hand-edit).
+# .private    -> applies on every host
+# .$HOSTNAME  -> host-specific (tracked per host)
+[ -f ~/.bashrc.private ]    && . ~/.bashrc.private
+[ -f ~/.bashrc.$HOSTNAME ]  && . ~/.bashrc.$HOSTNAME

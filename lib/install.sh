@@ -8,14 +8,20 @@
 # For every regular file under SRC, the matching $HOME/<relpath> is written.
 # Existing files that differ are first copied (with structure) into a backup
 # dir before being overwritten. Identical files are skipped. Files that exist
-# only in $HOME (e.g. *.local.host) are never touched, because this script only
-# writes paths that exist inside SRC.
+# only in $HOME are never touched, because this script only writes paths that
+# exist inside SRC.
+#
+# Host-specific overlays (<base>.$HOSTNAME) are installed only on the matching
+# host; other hosts' overlays are skipped (see lib/hostfilter.sh).
 #
 # Backup location: $DOTFILES_BACKUP if set (lets a caller share one dir across
 # multiple passes), otherwise ~/.dotfiles-backup/<UTC timestamp>.
 set -euo pipefail
 
-SRC=${1:-"$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/home"}
+LIBDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$LIBDIR/hostfilter.sh"
+
+SRC=${1:-"$(cd "$LIBDIR/.." && pwd)/home"}
 SRC=$(cd "$SRC" && pwd)
 
 if [ ! -d "$SRC" ]; then
@@ -25,10 +31,16 @@ fi
 
 BACKUP_DIR=${DOTFILES_BACKUP:-"$HOME/.dotfiles-backup/$(date -u +%Y%m%dT%H%M%SZ)"}
 
-copied=0 skipped=0 backed_up=0
+copied=0 skipped=0 backed_up=0 foreign=0
 while IFS= read -r -d '' file; do
     rel=${file#"$SRC"/}
     target=$HOME/$rel
+
+    # Skip overlays meant for a different host.
+    if dotfiles_is_foreign_host_overlay "$rel"; then
+        foreign=$((foreign + 1))
+        continue
+    fi
 
     if [ -e "$target" ] && cmp -s "$file" "$target"; then
         skipped=$((skipped + 1))
@@ -57,6 +69,6 @@ while IFS= read -r -d '' file; do
 done < <(find "$SRC" -type f -print0)
 
 echo "----"
-echo "from $SRC: $copied written, $skipped identical, $backed_up backed up"
+echo "from $SRC: $copied written, $skipped identical, $backed_up backed up, $foreign other-host overlays skipped"
 [ "$backed_up" -gt 0 ] && echo "backups in $BACKUP_DIR"
 exit 0

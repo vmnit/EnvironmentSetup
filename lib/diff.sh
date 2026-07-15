@@ -5,13 +5,18 @@
 #   SRC  the repo "home/" dir. Defaults to home/ next to this script.
 set -euo pipefail
 
-SRC=${1:-"$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/home"}
+LIBDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$LIBDIR/hostfilter.sh"
+
+SRC=${1:-"$(cd "$LIBDIR/.." && pwd)/home"}
 SRC=$(cd "$SRC" && pwd)
 
 diffs=0 same=0 missing=0
 while IFS= read -r -d '' file; do
     rel=${file#"$SRC"/}
     target=$HOME/$rel
+    # Ignore overlays meant for a different host (they aren't installed here).
+    dotfiles_is_foreign_host_overlay "$rel" && continue
     if [ ! -e "$target" ]; then
         echo "=== MISSING in \$HOME: $rel ==="
         missing=$((missing + 1))

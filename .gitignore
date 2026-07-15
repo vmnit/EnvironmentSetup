@@ -26,8 +26,7 @@ TestResults.xml
 .config/claude-code/
 home/.config/claude-code/
 # Machine/private overlays live in the private repo or in $HOME only.
-*.local
-*.local.host
+*.private
 # Local Claude Code settings and install backups.
 .claude/settings.local.json
 .dotfiles-backup/

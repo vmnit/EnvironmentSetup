@@ -9,13 +9,18 @@
 # refreshes what the repo already tracks.
 set -euo pipefail
 
-DEST=${1:-"$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/home"}
+LIBDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$LIBDIR/hostfilter.sh"
+
+DEST=${1:-"$(cd "$LIBDIR/.." && pwd)/home"}
 DEST=$(cd "$DEST" && pwd)
 
 updated=0 same=0 missing=0
 while IFS= read -r -d '' file; do
     rel=${file#"$DEST"/}
     src=$HOME/$rel
+    # Don't try to pull back overlays that belong to other hosts.
+    dotfiles_is_foreign_host_overlay "$rel" && continue
     if [ ! -e "$src" ]; then
         echo "missing $rel (not in \$HOME)"
         missing=$((missing + 1))

@@ -20,11 +20,21 @@ alias ss='source ~/.bashrc'
 
 alias la='ls -Altr'
 alias lah='ls -Altrh'
+alias lr='ls -ltr'
 alias cd='pushd '
+alias pcd='popd && pushd '
 alias rm='rm -i'
 alias rlf='readlink -f '
 alias ch6='chmod 666 '
 alias ch5='chmod 755 '
+
+# misc quality-of-life
+alias cls='clear'
+alias disp='echo $DISPLAY'
+alias dsh='du -sh '
+# zstd helpers: compress big files in-place, and cat a .zst to stdout
+alias zstcat='zstd -dc '
+alias compress_files='find . -type f -size +50M -not -name "*.gz" -not -name "*.zst" | xargs -n 1 -P 0 -rt zstd -f --rm '
 
 # tmux related aliases
 alias tml='tmux ls'
@@ -66,6 +76,9 @@ alias pdshRun='pdsh -w $SLURM_NODELIST '
 
 source ~/.bash_funcs
 
-# Machine/private overlays (see dotfiles README).
-[ -f ~/.bash_aliases.local ]      && . ~/.bash_aliases.local
-[ -f ~/.bash_aliases.local.host ] && . ~/.bash_aliases.local.host
+# Machine/private overlays (see dotfiles README). Both are managed by the private
+# dotfiles repo (do not hand-edit).
+# .private      -> applies on every host
+# .$HOSTNAME    -> host-specific (tracked per host)
+[ -f ~/.bash_aliases.private ]         && . ~/.bash_aliases.private
+[ -f ~/.bash_aliases.$HOSTNAME ]       && . ~/.bash_aliases.$HOSTNAME

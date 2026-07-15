@@ -29,6 +29,23 @@ function pretty_csv {
   perl -pe 's/((?<=,)|(?<=^)),/ ,/g;' "$@" | column -t -s, | less  -F -S -X -K
 }
 
+# print a single column; optional 2nd arg is the field separator
+# usage: myawk <field_num> [<separator>]   (reads stdin or pipe)
+function myawk {
+  if [ -n "$2" ]; then
+    awk -F"$2" '{print $field}' field="$1"
+  else
+    awk '{print $field}' field="$1"
+  fi
+}
+
+# print an inclusive range of lines, stopping early (fast on huge files)
+# usage: printLines <start> <end>   (reads stdin or pipe)
+function printLines {
+  local stop=$(( $2 + 1 ))
+  sed -n "${1},${2}p;${stop}q"
+}
+
 function scpToAny {
   scp -r $1 vivekag@$3:$2
 }
@@ -76,6 +93,9 @@ function slurmAcct() {
   sacct -j "$1" --format=JobID,Timelimit,Elapsed
 }
 
-# Machine/private overlays (see dotfiles README).
-[ -f ~/.bash_funcs.local ]      && . ~/.bash_funcs.local
-[ -f ~/.bash_funcs.local.host ] && . ~/.bash_funcs.local.host
+# Machine/private overlays (see dotfiles README). Both are managed by the private
+# dotfiles repo (do not hand-edit).
+# .private      -> applies on every host
+# .$HOSTNAME    -> host-specific (tracked per host)
+[ -f ~/.bash_funcs.private ]         && . ~/.bash_funcs.private
+[ -f ~/.bash_funcs.$HOSTNAME ]       && . ~/.bash_funcs.$HOSTNAME

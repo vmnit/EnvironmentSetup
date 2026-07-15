@@ -114,8 +114,9 @@ nnoremap <Leader>dp :call DebugPyPrint()<CR>
 silent! unmap t
 silent! unmap <C-E>
 
-" Machine/private overlays (see dotfiles README).
-" .local      -> managed by the private dotfiles repo (do not hand-edit)
-" .local.host -> per-machine, never tracked in any repo
-if filereadable(expand('~/.vimrc.local'))      | source ~/.vimrc.local      | endif
-if filereadable(expand('~/.vimrc.local.host')) | source ~/.vimrc.local.host | endif
+" Machine/private overlays (see dotfiles README), managed by the private repo.
+" .private    -> applies on every host
+" .$HOSTNAME  -> host-specific (tracked per host)
+let s:host = substitute(hostname(), '\..*$', '', '')
+if filereadable(expand('~/.vimrc.private'))     | source ~/.vimrc.private | endif
+if filereadable(expand('~/.vimrc.'.s:host))     | execute 'source ~/.vimrc.'.s:host | endif
