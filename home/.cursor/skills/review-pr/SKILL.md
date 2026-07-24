@@ -38,7 +38,7 @@ Copy this checklist into your working notes and track progress:
 - [ ] 4. (Re-review only) On top of the full Step 3 review, reconcile every prior human comment: fixed / fixed-wrong / unaddressed
 - [ ] 5. Cross-check existing bot reviews (Copilot / CodeRabbit): confirm, dismiss, or extend each
 - [ ] 6. Gate findings on confidence, self-critique to drop weak ones, then assign a criticality (High/Medium/Low) + a fix (suggestion block where possible)
-- [ ] 7. Post inline comments + one summary review with a one-line verdict (approve if clean re-review)
+- [ ] 7. Re-fetch reviews/comments/head SHA (freshness re-check), reconcile anything new since Step 1, THEN post inline comments + one summary review with a one-line verdict (approve only if still a clean re-review)
 - [ ] 8. Report a short recap in chat
 ```
 
@@ -325,6 +325,37 @@ Notes:
 
 ## Step 7: Post the review on the PR
 
+### Step 7.0: Freshness re-check (MANDATORY, do this immediately before posting)
+
+Time passes between Step 1 and this point, and automated reviewers (Copilot,
+CodeRabbit) re-review **asynchronously** on every push — so a fresh review or
+inline comment, or even a new commit, routinely lands *during* your review. If
+you post on the state you fetched in Step 1 you can approve over comments you
+never saw. This is the single most common way this skill produces a wrong
+verdict, so never skip this step.
+
+Immediately before building the payload, re-fetch and diff against Step 1:
+
+```bash
+# Current head SHA — did the author push while you were reviewing?
+gh pr view <pr> --json commits --jq '.commits[-1].oid'
+
+# Latest submitted reviews and inline comments (bots included)
+gh api repos/<owner>/<repo>/pulls/<pr>/reviews  --jq 'sort_by(.submitted_at) | .[-5:] | .[] | {user:.user.login, state, submitted_at}'
+gh api repos/<owner>/<repo>/pulls/<pr>/comments --jq 'sort_by(.created_at)   | .[-8:] | .[] | {user:.user.login, created_at, path, line, body:(.body[0:120])}'
+```
+
+Then reconcile:
+- **New human/bot comment since Step 1** → run it through Step 5 (confirm /
+  dismiss / extend) and fold any confirmed finding into this review. Do not
+  ignore it just because it appeared late.
+- **New commit since the SHA you reviewed** → your review is now stale. Re-run
+  Step 3 on the new diff (at least the changed hunks) before posting, and set
+  `commit_id` to the *new* head SHA.
+- **Nothing new** → proceed.
+
+### Post the review
+
 Post **one** PR review that bundles all inline comments plus a summary body, in a
 single API call. Inline comments attach to exact lines; the summary gives the
 author the big picture, a count by criticality, and a one-line verdict. On a
@@ -344,7 +375,7 @@ Write the review payload to a JSON file, then submit it:
 ```bash
 cat > /tmp/pr_review.json <<'EOF'
 {
-  "commit_id": "<head-commit-oid-from-step-1>",
+  "commit_id": "<head-commit-oid from the Step 7.0 re-check, NOT the stale Step 1 value>",
   "event": "COMMENT",
   "body": "## Review summary\n\n**Verdict: fix-before-ship**\n\n<2-4 sentence overall take>\n\n**Findings:** <H> High · <M> Medium · <L> Low\n\n<High items listed here so they are unmissable>",
   "comments": [
@@ -371,6 +402,12 @@ Posting notes:
     explicitly asks you to approve. On a clean re-review, approve with a single
     one-line body, e.g. `"No further review comments — approving."` (keep the
     `comments` array empty). Do not approve a first review on your own initiative.
+    **APPROVE is the least reversible action, so it demands the strictest
+    freshness bar:** only approve when the Step 7.0 re-check found nothing new
+    (no new commit, no new human/bot comment) since Step 1. If anything landed —
+    even a bot comment seconds ago — do not approve; downgrade to `"COMMENT"`,
+    reconcile the new item first, and re-run Step 7.0 once more right before you
+    finally post. When in doubt, `"COMMENT"` over `"APPROVE"`.
   - `"REQUEST_CHANGES"` — only if the user explicitly asks you to block the PR.
 - Never approve when anything is unaddressed, fixed wrong/partially, or newly
   found — post those as `"COMMENT"` instead.
@@ -400,6 +437,9 @@ the PR was approved with no further comments.
   what the comment asked, correctly and without side effects.
 - Do not let a previously-flagged High/critical comment slip through silently when
   it's still unaddressed — surface it as a final-check reminder.
+- Do not post (and above all do not APPROVE) on the state you fetched in Step 1 —
+  always run the Step 7.0 freshness re-check immediately before posting, because
+  bot reviewers comment asynchronously and a new comment or commit can land mid-review.
 - Do not review code outside the PR's diff and its immediate blast radius.
 - Do not post comments without a criticality tag or without a concrete suggestion.
 - Do not pad the review with low-value nits to look thorough.

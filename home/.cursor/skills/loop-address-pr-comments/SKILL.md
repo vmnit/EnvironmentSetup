@@ -94,7 +94,7 @@ notification is consumed) when any of these hold — and say why:
 
 - The user asks to stop.
 - `gh pr view <pr> --json state,mergedAt` shows the PR **merged or closed**.
-- **Copilot signals "no comments".** This is the primary "nothing left to do"
+- **Copilot signals a clean pass.** This is the primary "nothing left to do"
   stop signal. After each tick pushes fixes and re-requests Copilot, wait for
   its fresh review to land, then read the latest Copilot review:
 
@@ -106,10 +106,34 @@ notification is consumed) when any of these hold — and say why:
     --jq '[.[] | select(.user.login=="copilot-pull-request-reviewer" or .user.login=="Copilot") | select(.in_reply_to_id==null)] | length'
   ```
 
-  If that latest Copilot review has **no inline comments** and its body states it
-  found nothing (e.g. contains "no comments", "No suggestions", or an equivalent
-  clean-pass phrase), stop the loop — Copilot has confirmed there is nothing left
-  to address.
+  Copilot's real clean-pass wording is `"Copilot reviewed N out of M changed
+  files in this pull request and generated no new comments."` — so match its
+  body **case-insensitively** against any of these phrases (do NOT rely on the
+  bare substring `"no comments"`, which fails on `"generated no new comments"`
+  because of the word `new` in between):
+
+  - `generated no new comments`
+  - `no new comments`
+  - `no comments` (bare)
+  - `no suggestions`
+  - `did not find any issues` / `found no issues` / `nothing to report`
+
+  A quick robust check (normalize whitespace/case, then test):
+
+  ```bash
+  gh api repos/{owner}/{repo}/pulls/<pr>/reviews \
+    --jq '[.[] | select(.user.login=="copilot-pull-request-reviewer" or .user.login=="Copilot")] | last | .body' \
+    | tr '[:upper:]' '[:lower:]' \
+    | grep -Eiq 'no (new )?comments|no suggestions|found no issues|did not find any issues|nothing to report' \
+    && echo COPILOT_CLEAN || echo COPILOT_HAS_FEEDBACK
+  ```
+
+  If that latest Copilot review has **no inline comments** AND its body matches
+  one of the clean-pass phrases above (i.e. the check prints `COPILOT_CLEAN`),
+  stop the loop — Copilot has confirmed there is nothing left to address. Note
+  the clean-pass note may arrive as a review with `state: "COMMENTED"` (not
+  `APPROVED`); the body phrase + zero inline comments is what matters, not the
+  review state.
 
 Never arm a second loop for a PR that already has one running.
 
