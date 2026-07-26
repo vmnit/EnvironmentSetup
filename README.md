@@ -69,6 +69,37 @@ machine-specific tweaks:
 (`.ssh/config` has no `$HOSTNAME` variant — ssh's `Include` can't expand it, so
 per-host ssh tweaks go in `~/.ssh/config.private`.)
 
+The `$HOSTNAME` in an overlay name is always the **short** hostname (`hostname -s`);
+the rc files strip any domain before looking the file up, so an FQDN `$HOSTNAME`
+still finds `~/.bashrc.<short>`.
+
+### Migrating from the old `.local` names
+
+An earlier scheme used `<base>.local` (all hosts) and `<base>.local.host`
+(untracked, per-machine). `install.sh` only ever *writes* paths present in a
+repo's `home/` tree — it never removes a file it used to own — so after the
+rename those files stayed in `$HOME` while the rc files stopped sourcing them,
+silently dropping whatever config they held.
+
+`lib/migrate.sh` fixes that, and `bootstrap.sh` runs it automatically before
+installing. It decides by **content**, never by name:
+
+```sh
+bash lib/migrate.sh --dry-run   # show what would change, touch nothing
+bash lib/migrate.sh             # migrate (backs everything up first)
+```
+
+| situation | action |
+|---|---|
+| legacy file is empty | back up, remove |
+| identical to its new-scheme counterpart (or differs only in comments) | back up, remove |
+| counterpart absent | back up, **rename** — content is rescued |
+| counterpart exists and differs | back up both, **keep** the legacy file, warn for a manual merge |
+
+It never deletes unique config, and is a silent no-op once a machine is migrated.
+Note the old untracked `.local.host` tier is gone: per-machine config is now
+tracked as `.$HOSTNAME` in the private repo.
+
 ## Sync changes back
 
 ```sh

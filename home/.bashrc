@@ -184,5 +184,9 @@ set_prompt
 # dotfiles repo (do not hand-edit).
 # .private    -> applies on every host
 # .$HOSTNAME  -> host-specific (tracked per host)
-[ -f ~/.bashrc.private ]    && . ~/.bashrc.private
-[ -f ~/.bashrc.$HOSTNAME ]  && . ~/.bashrc.$HOSTNAME
+# Short hostname only: the installer names host overlays after `hostname -s`, so
+# on a box where $HOSTNAME is the FQDN the overlay would silently never load.
+_dot_host=${HOSTNAME:-$(hostname 2>/dev/null)}; _dot_host=${_dot_host%%.*}
+[ -f ~/.bashrc.private ]            && . ~/.bashrc.private
+[ -f "$HOME/.bashrc.$_dot_host" ]   && . "$HOME/.bashrc.$_dot_host"
+unset _dot_host

@@ -80,5 +80,9 @@ source ~/.bash_funcs
 # dotfiles repo (do not hand-edit).
 # .private      -> applies on every host
 # .$HOSTNAME    -> host-specific (tracked per host)
-[ -f ~/.bash_aliases.private ]         && . ~/.bash_aliases.private
-[ -f ~/.bash_aliases.$HOSTNAME ]       && . ~/.bash_aliases.$HOSTNAME
+# Short hostname only: the installer names host overlays after `hostname -s`, so
+# on a box where $HOSTNAME is the FQDN the overlay would silently never load.
+_dot_host=${HOSTNAME:-$(hostname 2>/dev/null)}; _dot_host=${_dot_host%%.*}
+[ -f ~/.bash_aliases.private ]              && . ~/.bash_aliases.private
+[ -f "$HOME/.bash_aliases.$_dot_host" ]     && . "$HOME/.bash_aliases.$_dot_host"
+unset _dot_host
