@@ -71,4 +71,15 @@ done < <(find "$SRC" -type f -print0)
 echo "----"
 echo "from $SRC: $copied written, $skipped identical, $backed_up backed up, $foreign other-host overlays skipped"
 [ "$backed_up" -gt 0 ] && echo "backups in $BACKUP_DIR"
+
+# Provision external deps the file-copy above can't create: tmux's tpm and the
+# plugins ~/.tmux.conf declares live under ~/.tmux/plugins as their own git
+# repos. Guarded by DOTFILES_PLUGINS_DONE so bootstrap's two install passes
+# (public tree, then private overlay) provision once, not twice. Never fatal:
+# plugins.sh handles missing git/tmux and offline runs itself, and the `|| true`
+# keeps a plugin hiccup from failing an otherwise-good install.
+if [ -z "${DOTFILES_PLUGINS_DONE:-}" ] && [ -x "$LIBDIR/plugins.sh" ]; then
+    export DOTFILES_PLUGINS_DONE=1
+    bash "$LIBDIR/plugins.sh" || true
+fi
 exit 0

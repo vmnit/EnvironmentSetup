@@ -40,10 +40,16 @@ bash lib/install.sh            # copies home/ into $HOME
   host**; other hosts' overlays are skipped (see `lib/hostfilter.sh`). The same
   filter applies to `update.sh`/`diff.sh`, so they ignore other hosts' files too.
 
-After installing, you'll also want tmux's plugin manager:
+`install.sh` also provisions tmux automatically (via `lib/plugins.sh`): it clones
+tmux's plugin manager (tpm) into `~/.tmux/plugins/tpm` and installs the plugins
+declared in `~/.tmux.conf` (`tmux-resurrect`, `tmux-continuum`,
+`vim-tmux-navigator`) — no manual `git clone` or `prefix + I` needed. It's
+idempotent (re-runs just fast-forward) and non-fatal: if `git`/`tmux` is missing
+or you're offline it warns and skips, so the rest of the install still succeeds.
+Run it on its own any time with:
 
 ```sh
-git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm   # then: tmux + prefix-I
+bash lib/plugins.sh
 ```
 
 ## Machine-specific & private overlays
