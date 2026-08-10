@@ -21,7 +21,7 @@ Your job is to systematically work through every unresolved review comment on a 
 Copy this checklist into your working notes and track progress:
 
 ```
-- [ ] 1. Fetch all unresolved review comments (human + bot)
+- [ ] 1. Fetch all unresolved review comments (human + bot), including suppressed/hidden ones
 - [ ] 2. Classify each comment (Act / Discuss / Decline)
 - [ ] 3. For Act items: implement fix + proactive sweep
 - [ ] 4. For Decline items: draft humble reply with reasoning
@@ -69,6 +69,41 @@ gh api graphql -f query='
 Filter out `isResolved: true` and `isOutdated: true` threads before reading bodies. Read only the comment body plus the minimum file/line context needed to act.
 
 If `gh` is unavailable or the PR is on a non-GitHub host, ask the user to paste the comments.
+
+### Also look for suppressed comments worth fixing
+
+Do not stop at the comments GitHub surfaces by default. Reviewers - especially bots like Copilot, CodeRabbit, and Bugbot - routinely **suppress** feedback that is still worth acting on. Suppressed comments include:
+
+- **Low-confidence / collapsed bot comments** folded into a "N comments not posted" or "additional comments" collapsed section of a review summary.
+- **Comments hidden as `outdated`** because the line moved, but the underlying issue was never actually fixed.
+- **Comments hidden as `resolved`** by someone other than the author (or auto-resolved), where the fix was never applied.
+- **Minimized comments** (GitHub `isMinimized: true`, e.g. marked "outdated", "resolved", "spam", or "off-topic").
+
+Pull these in explicitly and skim their bodies before dismissing them:
+
+```bash
+# Threads GitHub hides by default (resolved / outdated) - re-open the bodies to
+# confirm the issue was truly addressed, not just moved or auto-closed.
+gh api graphql -f query='
+  query($owner:String!,$repo:String!,$pr:Int!){
+    repository(owner:$owner,name:$repo){
+      pullRequest(number:$pr){
+        reviewThreads(first:100){
+          nodes{
+            isResolved isOutdated
+            comments(first:20){
+              nodes{ author{login} body path isMinimized minimizedReason }
+            }
+          }
+        }
+      }
+    }
+  }' -f owner=<owner> -f repo=<repo> -F pr=<pr>
+```
+
+Also re-read every review summary body (from the `/reviews` call above) in full - bot summaries frequently embed collapsed suggestions under `<details>` blocks that the inline-comments API never returns.
+
+Treat a suppressed comment exactly like any other: run it through the Step 2 rubric. A hidden or low-confidence flag is **not** a reason to skip it - if it points at a real bug, missing test, or convention violation, it is an **Act** item. If it truly is stale (the code already changed to address it), note that in your working set and move on; do not re-litigate a genuinely fixed issue.
 
 ## Step 2: Classify each comment
 
@@ -288,4 +323,4 @@ The next time you open a PR in this repo, scan that list before pushing. The goa
 
 ## Summary
 
-Fetch → classify → fix-and-sweep → **self-review if installed** → reply humbly → resolve → record the pattern. Treat every comment as a free lesson; treat every reply as something the reviewer will reread tomorrow.
+Fetch (including suppressed/hidden comments) → classify → fix-and-sweep → **self-review if installed** → reply humbly → resolve → record the pattern. Treat every comment as a free lesson; treat every reply as something the reviewer will reread tomorrow.

@@ -2,6 +2,21 @@
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
 
+# Sourced above the interactivity guard so non-interactive shells, such as the
+# Cursor remote server, also inherit these values.
+[ -f "$HOME/.config/cursor-secrets.env" ] && . "$HOME/.config/cursor-secrets.env"
+
+# Cursor does not expand ${env:...} inside mcp.json headers here, so the values
+# are baked in before the Cursor server reads the file. Only re-renders when the
+# template or the secrets have changed, to keep shell startup cheap.
+if [ -f "$HOME/.cursor/mcp.json.template" ]; then
+    if [ ! -f "$HOME/.cursor/mcp.json" ] \
+        || [ "$HOME/.cursor/mcp.json.template" -nt "$HOME/.cursor/mcp.json" ] \
+        || [ "$HOME/.config/cursor-secrets.env" -nt "$HOME/.cursor/mcp.json" ]; then
+        python3 "$HOME/.cursor/render-mcp-config.py" >/dev/null 2>&1
+    fi
+fi
+
 # If not running interactively, don't do anything
 case $- in
     *i*) ;;
