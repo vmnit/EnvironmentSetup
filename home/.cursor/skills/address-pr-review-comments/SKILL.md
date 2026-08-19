@@ -39,6 +39,11 @@ Do not skip step 3's proactive sweep or step 9's pattern capture - they are the 
 ## Step 1: Fetch comments
 
 Use the GitHub CLI. Prefer scoped reads over dumping entire JSON payloads into context.
+Load per-repo `gh` account routing first (agent shells skip `~/.bashrc`):
+
+```bash
+[ -f "$HOME/.config/gh/per-repo.sh" ] && . "$HOME/.config/gh/per-repo.sh"
+```
 
 ```bash
 # PR metadata + thread URLs

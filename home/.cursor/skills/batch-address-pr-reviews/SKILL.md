@@ -46,7 +46,9 @@ Parse the user's request for two things:
 
 Determine the repo. Default to the current repo (`gh repo view --json
 nameWithOwner -q .nameWithOwner`). If the user names a repo or works across
-multiple, confirm which one (or run per repo).
+multiple, confirm which one (or run per repo). Load
+`~/.config/gh/per-repo.sh` before any `gh` call so the pin for this directory
+is used (agent shells skip `~/.bashrc`).
 
 ## Step 2: List open PRs (and ask if no scope)
 

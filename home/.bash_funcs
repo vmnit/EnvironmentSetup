@@ -177,6 +177,10 @@ function slurmAddTime() {
   echo "job $jobid: new time_limit ${newLimit}  (time_left after:  ${left})"
 }
 
+# Per-repo GitHub CLI account routing. Also sourced by Cursor skills because
+# agent shells skip ~/.bashrc and would otherwise use the global active account.
+[ -f "$HOME/.config/gh/per-repo.sh" ] && . "$HOME/.config/gh/per-repo.sh"
+
 # Machine/private overlays (see dotfiles README). Both are managed by the private
 # dotfiles repo (do not hand-edit).
 # .private      -> applies on every host

@@ -22,9 +22,25 @@ in the private overlay instead):
 - `home/.cursor/skills/` — generic Cursor skills: `review-pr`, `rebase-pr`,
   `address-pr-review-comments`, `batch-address-pr-reviews`,
   `loop-address-pr-comments`.
+- `home/.config/gh/per-repo.sh` — `gh` wrapper that pins the API token per repo.
 
 Cursor MCP servers (Atlassian/GitHub) carry live tokens and are provided per
 machine by the private overlay; nothing secret is tracked here.
+
+### GitHub CLI per-repo account
+
+`home/.config/gh/per-repo.sh` wraps `gh` so each checkout can pin which
+*already-logged-in* account to use, without `gh auth switch` (which is global
+and races across shells). Selection order:
+
+1. `git config gh.account <user>` in the current repo
+2. a `.gh-account` file (walk from CWD up) for non-git directories
+3. the globally active `gh` account
+
+`.bash_funcs` sources the wrapper in interactive shells. Cursor skills that
+call `gh` source the same file first, because agent shells skip `~/.bashrc`.
+Which GitHub usernames to pin is machine/org-specific and lives in the private
+overlay (`gh-account` helper).
 
 ## Install
 

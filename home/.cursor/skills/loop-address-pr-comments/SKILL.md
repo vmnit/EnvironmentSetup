@@ -38,7 +38,8 @@ Accept `/loop-address-pr-comments [interval] <pr>`.
   say so if you clamp.
 
 Resolve `<pr>` to `owner/repo` + number once up front (`gh pr view <pr> --json
-number,url,state,headRefName`) so every tick targets the same PR.
+number,url,state,headRefName`) so every tick targets the same PR. Source
+`~/.config/gh/per-repo.sh` before that `gh` call (agent shells skip `~/.bashrc`).
 
 ## Arm the loop
 

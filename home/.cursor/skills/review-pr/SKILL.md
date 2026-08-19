@@ -45,11 +45,13 @@ Copy this checklist into your working notes and track progress:
 ## Step 1: Preflight + fetch the PR
 
 **Preflight — check `gh` before anything else.** Don't discover a missing CLI
-mid-review:
+mid-review. Agent shells skip `~/.bashrc`, so load per-repo account routing
+first (otherwise writes go out as the *global* active account):
 
 ```bash
+[ -f "$HOME/.config/gh/per-repo.sh" ] && . "$HOME/.config/gh/per-repo.sh"
 gh --version        # is the CLI installed?
-gh auth status      # is it authenticated to the right host?
+gh auth status      # authenticated, and which account this directory pins
 ```
 
 If `gh` is missing or unauthenticated, stop and tell the user how to fix it

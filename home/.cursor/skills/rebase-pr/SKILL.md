@@ -34,7 +34,13 @@ Copy this checklist into your working notes and tick as you go. Do not skip the 
 
 ## Step 1: Resolve PR identity
 
-Accept either a PR URL (`https://github.com/<owner>/<repo>/pull/<n>`) or a `#<n>` reference plus a known repo. Pull every fact you need with one `gh` call:
+Accept either a PR URL (`https://github.com/<owner>/<repo>/pull/<n>`) or a `#<n>` reference plus a known repo. Load per-repo `gh` account routing first (agent shells skip `~/.bashrc`):
+
+```bash
+[ -f "$HOME/.config/gh/per-repo.sh" ] && . "$HOME/.config/gh/per-repo.sh"
+```
+
+Pull every fact you need with one `gh` call:
 
 ```bash
 gh pr view <pr> --repo <owner>/<repo> --json \
