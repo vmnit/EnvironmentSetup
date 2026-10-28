@@ -11,7 +11,9 @@ description: >-
   extend each). On a re-review of a PR that was already reviewed, it also checks
   which prior comments were addressed, verifies the fixes are correct, flags any
   unaddressed critical items, hunts for gaps the last review missed, and approves
-  the PR when nothing is left. Use when the user gives you a PR (number, URL, or
+  the PR when nothing is left. A review with no findings approves the PR,
+  including a first review — an empty comment list is an approval, not a neutral
+  COMMENT. Use when the user gives you a PR (number, URL, or
   branch) and asks for a code review, a design review, a scalability review, a
   re-review/follow-up review, or to add review comments on a PR.
 ---
@@ -38,7 +40,7 @@ Copy this checklist into your working notes and track progress:
 - [ ] 4. (Re-review only) On top of the full Step 3 review, reconcile every prior human comment: fixed / fixed-wrong / unaddressed
 - [ ] 5. Cross-check existing bot reviews (Copilot / CodeRabbit): confirm, dismiss, or extend each
 - [ ] 6. Gate findings on confidence, self-critique to drop weak ones, then assign a criticality (High/Medium/Low) + a fix (suggestion block where possible)
-- [ ] 7. Re-fetch reviews/comments/head SHA (freshness re-check), reconcile anything new since Step 1, THEN post inline comments + one summary review with a one-line verdict (approve only if still a clean re-review)
+- [ ] 7. Re-fetch reviews/comments/head SHA (freshness re-check), reconcile anything new since Step 1, THEN post one summary review. If the finding list is empty, event is APPROVE (first review or re-review). If you are posting any finding, event is COMMENT
 - [ ] 8. Report a short recap in chat
 ```
 
@@ -213,9 +215,9 @@ Anything new becomes a normal finding.
 
 Decide the outcome of the re-review:
 - **Clean** — every prior comment is Fixed (correct) and the gap sweep found
-  nothing new. → Approve the PR (see Step 7).
+  nothing new. The finding list is empty. → Approve the PR (see Step 7).
 - **Not clean** — anything is Fixed (wrong/partial), Unaddressed, or the gap
-  sweep found a new issue. → Post findings as usual; do **not** approve.
+  sweep found a new issue. → Post those findings as `"COMMENT"`; do **not** approve.
 
 ## Step 5: Cross-check existing bot reviews (Copilot / CodeRabbit)
 
@@ -275,7 +277,8 @@ Rules:
 - When unsure between two levels, pick the **higher** one and say why.
 - Every comment must include a concrete, actionable suggestion — ideally a code
   snippet or a one-line "do X instead". Never post "this is wrong" with no fix.
-- Do not invent problems to fill a quota. A clean PR gets a short review.
+- Do not invent problems to fill a quota. A clean PR gets an approval, not a
+  neutral comment (see Step 7). A short praise sentence in the approve body is fine.
 - Praise is allowed and useful: call out a genuinely good pattern briefly.
 
 ### Keep comments short and plain
@@ -397,22 +400,41 @@ Posting notes:
 - `line` is the line number in the file's new version; use `side: "RIGHT"` for
   added/context lines and `side: "LEFT"` only to comment on removed lines.
 - For a multi-line comment, set both `start_line` and `line`.
-- `event` selection:
-  - `"COMMENT"` (neutral) — default whenever you have findings to post.
-  - `"APPROVE"` — use **only** for a *clean re-review* per Step 4 (every prior
-    comment Fixed-correct and the gap sweep found nothing new), or when the user
-    explicitly asks you to approve. On a clean re-review, approve with a single
-    one-line body, e.g. `"No further review comments — approving."` (keep the
-    `comments` array empty). Do not approve a first review on your own initiative.
-    **APPROVE is the least reversible action, so it demands the strictest
-    freshness bar:** only approve when the Step 7.0 re-check found nothing new
-    (no new commit, no new human/bot comment) since Step 1. If anything landed —
-    even a bot comment seconds ago — do not approve; downgrade to `"COMMENT"`,
-    reconcile the new item first, and re-run Step 7.0 once more right before you
-    finally post. When in doubt, `"COMMENT"` over `"APPROVE"`.
+- `event` selection is decided by the finding list, not by whether this is a
+  first review:
+  - `"APPROVE"` — **required** when you are posting no findings. That means the
+    `comments` array is empty **and** the summary does not describe a problem
+    (a one-line "no comments, approving" plus optional praise is the whole body).
+    This includes a first review that came back clean and a clean re-review
+    (Step 4: every prior comment Fixed-correct, gap sweep found nothing new).
+    Do this without waiting for the user to ask. Leaving a clean PR as
+    `"COMMENT"` is the bug this step exists to prevent.
+    Body: `"No review comments — approving."` Low nits you decided to post are
+    findings: they stay `"COMMENT"`, not an approval with comments attached.
+    **Freshness still gates the approval:** only approve when the Step 7.0
+    re-check found nothing new (no new commit, no new human/bot comment you have
+    not already reconciled) since Step 1. If anything landed — even a bot
+    comment seconds ago — reconcile it first. If it becomes a finding, post
+    `"COMMENT"`. If it does not, re-run Step 7.0 once more and then approve.
+  - `"COMMENT"` (neutral) — whenever you post one or more findings, at any
+    criticality, including findings that could not be attached inline and were
+    moved into the summary body.
   - `"REQUEST_CHANGES"` — only if the user explicitly asks you to block the PR.
 - Never approve when anything is unaddressed, fixed wrong/partially, or newly
-  found — post those as `"COMMENT"` instead.
+  found — those are findings, so the event is `"COMMENT"`.
+
+Empty-finding payload (first review or clean re-review):
+
+```bash
+cat > /tmp/pr_review.json <<'EOF'
+{
+  "commit_id": "<head-commit-oid from the Step 7.0 re-check>",
+  "event": "APPROVE",
+  "body": "No review comments — approving.",
+  "comments": []
+}
+EOF
+```
 - If an inline comment fails because the line is outside the diff hunk, move that
   finding into the summary `body` (reference the file/line in text) instead of
   dropping it.
@@ -424,6 +446,10 @@ Posting notes:
 After posting, give the user a short recap: the PR, the verdict, the counts by
 criticality, the High items in one line each, and the review URL. Keep it tight.
 
+If you approved, say so in that recap in the same sentence as the verdict. A
+clean PR that you left as a neutral comment is an incomplete review; go back
+and submit `"APPROVE"` before you finish.
+
 On a re-review, also include: how many prior comments are now resolved, any that
 were fixed incorrectly or left unaddressed (with the still-open High items called
 out explicitly), any new gaps found, and — if you approved — a one-line note that
@@ -432,9 +458,9 @@ the PR was approved with no further comments.
 ## What NOT to do
 
 - Do not change code or push commits; reviewing is read-only.
-- Do not request-changes unless explicitly asked. Do not approve a first review on
-  your own initiative — auto-approve only on a *clean re-review* (Step 4) or when
-  the user asks.
+- Do not request-changes unless explicitly asked. Do approve when the finding
+  list is empty, including on a first review — do not leave a clean PR as
+  `"COMMENT"`. Do not approve a PR that still has a finding, including a Low.
 - Do not mark a prior comment resolved without confirming the fix actually does
   what the comment asked, correctly and without side effects.
 - Do not let a previously-flagged High/critical comment slip through silently when
