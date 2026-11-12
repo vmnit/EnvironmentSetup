@@ -21,7 +21,8 @@ in the private overlay instead):
 - `home/.claude/agents/` — Claude Code subagents (rubric planner/evaluator/implementer).
 - `home/.cursor/skills/` — generic Cursor skills: `review-pr`, `rebase-pr`,
   `address-pr-review-comments`, `batch-address-pr-reviews`,
-  `loop-address-pr-comments`.
+  `loop-address-pr-comments`, `file-investigation-issue`, `write-docs`,
+  `write-code-comments`, `summarize`.
 - `home/.config/gh/per-repo.sh` — `gh` wrapper that pins the API token per repo.
 
 Cursor MCP servers (Atlassian/GitHub) carry live tokens and are provided per
