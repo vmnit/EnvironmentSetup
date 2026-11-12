@@ -123,6 +123,27 @@ function _slurmSecToDur() {
   fi
 }
 
+# slurm: show details for ALL of your jobs (auto-detects job ids by $USER).
+# Mirrors `squeue -j <id> -h -o "<fmt>"` but across every job on your name.
+# usage: slurmMine [fmt]
+#   - no args: a readable table (jobid, partition, name, state, used, left, limit)
+#   - with fmt: applies that squeue -o format to all your jobs
+#               e.g. slurmMine "%L"   -> time left for each of your jobs
+function slurmMine() {
+  local jobs
+  jobs=$(squeue -u "$USER" -h -o "%i")
+  if [ -z "$jobs" ]; then
+    echo "no jobs found for $USER" >&2
+    return 1
+  fi
+  if [ $# -ge 1 ]; then
+    # prefix each line with the job id so a bare field like %L stays identifiable
+    squeue -u "$USER" -h -o "%i $1"
+  else
+    squeue -u "$USER" -o "%.18i %.9P %.12j %.2t %.11M %.11L %.11l %R"
+  fi
+}
+
 # slurm: extend a running job's time limit by N hours (default 2).
 # usage: slurmAddTime [hours] [jobid]
 #   - if no jobid and you have exactly one job, it is picked automatically
